@@ -161,7 +161,7 @@ sudo ufw status verbose
 
 ## Assumptions and Limitations
 
-The task description references vswitches and VLAN-tagged ports, which is consistent with both Proxmox and VMware infrastructure. Since I have Proxmox available locally I used the `bpg/proxmox` Terraform provider. If your environment runs VMware vSphere or another hypervisor, the provider block and VM resource in `terraform/main.tf` would need to be adapted — the Ansible playbook is hypervisor-agnostic and requires no changes.
+The task description references vswitches, which I assume is referring to either Proxmox or VMware. Since I have Proxmox available locally I used the `bpg/proxmox` Terraform provider. If your environment runs VMware vSphere or another hypervisor, the provider block and VM resource in `terraform/main.tf` would need to be adapted.
 
 The VM's external IP is assigned via DHCP, which keeps the Terraform code portable but requires updating the Ansible inventory after each fresh provisioning.
 
