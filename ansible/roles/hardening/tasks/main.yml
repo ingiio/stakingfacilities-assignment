@@ -1,0 +1,100 @@
+---
+- name: Install hardening packages
+  apt:
+    name:
+      - fail2ban
+      - ufw
+    state: present
+
+# UFW Rules
+- name: Reset UFW to defaults
+  ufw:
+    state: reset
+
+- name: Set UFW default inbound policy to deny
+  ufw:
+    default: deny
+    direction: incoming
+
+- name: Set UFW default outbound policy to allow
+  ufw:
+    default: allow
+    direction: outgoing
+
+- name: Allow SSH on external interface only
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+    interface_in: "{{ external_interface }}"
+
+- name: Allow HTTP on external interface only
+  ufw:
+    rule: allow
+    port: '80'
+    proto: tcp
+    interface_in: "{{ external_interface }}"
+
+- name: Allow port 9000 on internal interface only
+  ufw:
+    rule: allow
+    port: '9000'
+    proto: tcp
+    interface_in: "{{ internal_interface }}"
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+
+# Sysctl kernel hardening
+- name: Apply sysctl hardening
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.ipv4.ip_forward', value: '0' }
+    - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
+    - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+    - { name: 'net.ipv4.conf.all.rp_filter', value: '1' }
+    - { name: 'kernel.dmesg_restrict', value: '1' }
+    - { name: 'kernel.sysrq', value: '0' }
+
+# Fail2ban
+- name: Deploy fail2ban jail config
+  copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime  = 3600
+      findtime = 600
+      maxretry = 3
+
+      [sshd]
+      enabled  = true
+      port     = ssh
+      logpath  = %(sshd_log)s
+      backend  = systemd
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start fail2ban
+  systemd:
+    name: fail2ban
+    enabled: true
+    state: restarted
+
+- name: Check if reboot is required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required
+
+- name: Reboot if required
+  reboot:
+    msg: "Reboot triggered by Ansible after hardening"
+    reboot_timeout: 120
+  when: reboot_required.stat.exists

@@ -1,0 +1,6 @@
+network:
+  version: 2
+  ethernets:
+    {{ internal_interface }}:
+      addresses:
+        - {{ internal_ip }}/{{ internal_prefix }}

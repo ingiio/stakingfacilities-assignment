@@ -1,0 +1,5 @@
+---
+external_interface: "{{ ansible_default_ipv4.interface }}"
+internal_interface: "{{ ansible_interfaces | difference([ansible_default_ipv4.interface, 'lo']) | first }}"
+internal_ip: "10.200.16.101"
+internal_prefix: "29"

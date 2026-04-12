@@ -1,0 +1,13 @@
+server {
+    listen {{ ansible_facts[external_interface]['ipv4']['address'] }}:80;
+    server_name _;
+
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    server_tokens off;
+}

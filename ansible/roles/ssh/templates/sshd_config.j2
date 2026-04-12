@@ -1,0 +1,21 @@
+# Managed by Ansible - do not edit manually
+
+Port 22
+ListenAddress {{ ansible_facts[external_interface]['ipv4']['address'] }}
+
+# Authentication
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+UsePAM yes
+# Security
+X11Forwarding no
+MaxAuthTries 3
+LoginGraceTime 30
+AllowAgentForwarding no
+AllowTcpForwarding no
+Subsystem sftp /usr/lib/openssh/sftp-server
+# Keep connections alive
+ClientAliveInterval 300
+ClientAliveCountMax 2

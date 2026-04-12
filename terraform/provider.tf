@@ -1,0 +1,19 @@
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.73"
+    }
+  }
+}
+
+provider "proxmox" {
+  endpoint  = var.proxmox_endpoint
+  api_token = var.proxmox_api_token
+  insecure  = true # allows self-signed cert, which Proxmox uses by default
+  ssh {
+    agent    = false
+    username = "root"
+    password = var.proxmox_ssh_password
+  }
+}
