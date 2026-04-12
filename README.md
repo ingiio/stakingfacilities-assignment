@@ -16,7 +16,7 @@ Terraform handles VM provisioning. Ansible handles all in-OS configuration and h
 ```
 Internet / Operator access
           │
-       [eth0] ← SSH (external only), Nginx port 80 (external only)
+       [eth0] ← SSH (external only), Nginx port 80 (external only) / IP Assigned via DHCP
           │
    [ Ubuntu VM — 10.200.16.101/29 ]
           │
@@ -25,7 +25,7 @@ Internet / Operator access
    10.200.16.100 (internal monitoring device)
 ```
 
-Port 9000 on the internal interface is reserved for internal service traffic — for example a Prometheus scraper or remote signer. No management traffic is permitted on the internal interface.
+Port 9000 on the internal interface is reserved for internal service traffic
 
 ## Repository Structure
 
