@@ -18,11 +18,11 @@ Internet / Operator access
           │
        [eth0] ← SSH (external only), Nginx port 80 (external only) / IP Assigned via DHCP
           │
-   [ Ubuntu VM — 10.200.16.101/29 ]
+   [ Ubuntu VM — ]
           │
-       [ens19, VLAN 150] ← port 9000/TCP only
+       [ens19, 10.200.16.101/29 - VLAN 150] ← port 9000/TCP only
           │
-   10.200.16.100 (internal monitoring device)
+   10.200.16.100 (internal device on VLAN 150)
 ```
 
 Port 9000 on the internal interface is reserved for internal service traffic
