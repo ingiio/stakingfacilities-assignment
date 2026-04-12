@@ -179,5 +179,6 @@ The VM's external IP is assigned via DHCP, which keeps the Terraform code portab
 
 ## Future Improvements
 
-Preinstall qemu-guest-agent into the template/image
+Preinstall qemu-guest-agent into the template/image.
+
 Dynamic Ansible inventory that automatically gets IP information from Terraform output
