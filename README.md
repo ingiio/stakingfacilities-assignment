@@ -175,4 +175,4 @@ The VM's external IP is assigned via DHCP, which keeps the Terraform code portab
 
 **Static IP on internal interface** — the internal interface is assigned `10.200.16.101/29` via netplan to establish L3 connectivity with `10.200.16.100/29`. Configurable via `group_vars`.
 
-**Port 9000** — exposed exclusively on the internal interface. In a validator infrastructure context this would typically serve Prometheus metrics or a remote signer endpoint, keeping sensitive service traffic off the public network.
+**Port 9000** — exposed exclusively on the internal interface. In your production environment I assume this port is used by the Ethereum beacon node or some internal log collection port (prometheus/grafana).
