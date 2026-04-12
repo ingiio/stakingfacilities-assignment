@@ -169,7 +169,7 @@ The VM's external IP is assigned via DHCP, which keeps the Terraform code portab
 
 **DHCP on the external interface** — portable across environments without requiring knowledge of the target IP range.
 
-**Bridge names as Terraform variables** — `external_bridge` and `internal_bridge` are configurable to accommodate different Proxmox environments.
+**Bridge names as Terraform variables** — `external_bridge` and `internal_bridge` are configurable to accommodate different environments.
 
 **Interface auto-detection in Ansible** — the playbook detects the external interface via the default route and derives the internal interface from what remains, avoiding hardcoded interface names.
 
