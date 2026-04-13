@@ -1,6 +1,6 @@
 # Ubuntu Server Deployment and Automated Hardening
 
-Automated deployment and hardening of a dual-homed Ubuntu Server VM using Terraform and Ansible.
+Automated deployment and hardening of a Ubuntu Server VM using Terraform and Ansible.
 
 ## Overview
 
