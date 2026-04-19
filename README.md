@@ -101,7 +101,7 @@ ansible-playbook -i inventory.ini playbook.yml
 ### 5. Verify
 
 ```bash
-terraform output vm_ip
+terraform output vm_ipv4_addresses
 curl http://<vm-ip>
 ssh ubuntu@<vm-ip>
 ```
