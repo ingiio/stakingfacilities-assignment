@@ -1,30 +1,31 @@
 # Ubuntu Server Deployment and Automated Hardening
 
-Automated deployment and hardening of a dual-homed Ubuntu Server VM using Terraform and Ansible.
+Automated deployment and hardening of a Ubuntu Server VM using Terraform and Ansible.
 
 ## Overview
 
 This project provisions an Ubuntu 24.04 VM on Proxmox with two network interfaces:
 
 - **External interface** — internet-facing. SSH and the web server listen exclusively on this interface.
-- **Internal interface** (VLAN 150) — isolated internal network. Exposes port 9000 TCP to the device at `10.200.16.100/29`, intended for internal monitoring or metrics scraping (e.g. Prometheus). No management traffic traverses this interface.
+- **Internal interface** (VLAN 150) — isolated internal network. Exposes port 9000 TCP to the device at `10.200.16.100/29`, No management traffic traverses this interface.
 
-Terraform handles VM provisioning. Ansible handles all in-OS configuration, hardening, and service management.
+Terraform handles VM provisioning. Ansible handles all in-OS configuration and hardening.
 
 ## Architecture
 
 ```
 Internet / Operator access
           │
-       [eth0] ← SSH (external only), Nginx port 80 (external only)
+       [eth0] ← SSH (external only), Nginx port 80 (external only) / IP Assigned via DHCP
           │
-   [ Ubuntu VM — 10.200.16.101/29 ]
+   [ Ubuntu VM — ]
           │
-       [ens19, VLAN 150] ← port 9000/TCP only
+       [ens19, 10.200.16.101/29 - VLAN 150] ← port 9000/TCP only
           │
-   10.200.16.100 (internal monitoring device)
+   10.200.16.100 (internal device on VLAN 150)
 ```
 
+Port 9000 on the internal interface is reserved for internal service traffic
 
 ## Repository Structure
 
@@ -35,7 +36,6 @@ Internet / Operator access
 │   ├── variables.tf      # All environment-specific variables
 │   ├── outputs.tf        # VM IP output
 │   ├── provider.tf       # Proxmox provider configuration
-│   └── terraform.tfvars  # Your local values (not committed)
 └── ansible/
     ├── playbook.yml      # Main playbook
     ├── inventory.ini     # Host inventory (update IP after terraform apply)
@@ -52,7 +52,7 @@ Internet / Operator access
 
 - Terraform >= 1.0 with network access to the Proxmox API (port 8006)
 - Proxmox API token with sufficient privileges
-- Ansible >= 2.14 on any Linux host with SSH access to the provisioned VM
+- Ansible >= 2.14 on any host with SSH access to the provisioned VM
 
 ## Usage
 
@@ -71,19 +71,12 @@ external_bridge = "vmbr0"
 internal_bridge = "vmbr1"
 ```
 
-> **Note:** `terraform.tfvars` is excluded from version control. Never commit it.
 
 ### 2. Generate an SSH key pair
 
 If you don't already have one, generate a key pair on the machine you will use to access the VM:
 
-```bash
-ssh-keygen -t ed25519 -C "staking-vm"
-```
-
-Accept the default path. The public key will be at `~/.ssh/id_ed25519.pub`. Copy its contents into `terraform.tfvars` as the `ssh_public_key` value. This key will be injected into the VM via cloud-init and is the only way to authenticate — password authentication is disabled by the Ansible playbook.
-
-The corresponding private key (`~/.ssh/id_ed25519`) must also be present on your Ansible control node so the playbook can connect to the VM.
+The corresponding private key must also be present on your Ansible control node so the playbook can connect to the VM.
 
 ### 3. Provision the VM
 
@@ -168,20 +161,24 @@ sudo ufw status verbose
 
 ## Assumptions and Limitations
 
-The brief references vswitches and VLAN-tagged ports, which is consistent with both Proxmox and VMware infrastructure. Since I have Proxmox available locally I used the `bpg/proxmox` Terraform provider. If your environment runs VMware vSphere or another hypervisor, the provider block and VM resource in `terraform/main.tf` would need to be adapted — the Ansible playbook is hypervisor-agnostic and requires no changes.
+The task description references vswitches, which I assume is referring to either Proxmox or VMware. Since I have Proxmox available locally I used the `bpg/proxmox` Terraform provider. If your environment runs VMware vSphere or another hypervisor, the provider block and VM resource in `terraform/main.tf` would need to be adapted.
 
-The VM's external IP is assigned via DHCP, which keeps the Terraform code portable but requires updating the Ansible inventory after each fresh provisioning. For production use a static DHCP reservation is recommended.
+The VM's external IP is assigned via DHCP, which keeps the Terraform code portable but requires updating the Ansible inventory after each fresh provisioning.
 
 ## Design Decisions
 
 **DHCP on the external interface** — portable across environments without requiring knowledge of the target IP range.
 
-**Bridge names as Terraform variables** — `external_bridge` and `internal_bridge` are configurable to accommodate different Proxmox environments.
+**Bridge names as Terraform variables** — `external_bridge` and `internal_bridge` are configurable to accommodate different environments.
 
 **Interface auto-detection in Ansible** — the playbook detects the external interface via the default route and derives the internal interface from what remains, avoiding hardcoded interface names.
 
 **Static IP on internal interface** — the internal interface is assigned `10.200.16.101/29` via netplan to establish L3 connectivity with `10.200.16.100/29`. Configurable via `group_vars`.
 
-**Terraform provisions, Ansible configures** — no in-OS configuration at the Terraform layer. Clean separation of concerns.
+**Port 9000** — exposed exclusively on the internal interface. In your production environment I assume this port is used by the Ethereum beacon node or some internal log collection port (prometheus/grafana).
 
-**Port 9000** — exposed exclusively on the internal interface. In a validator infrastructure context this would typically serve Prometheus metrics or a remote signer endpoint, keeping sensitive service traffic off the public network.
+## Future Improvements
+
+Preinstall qemu-guest-agent into the template/image.
+
+Dynamic Ansible inventory that automatically gets IP information from Terraform output
