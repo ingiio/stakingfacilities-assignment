@@ -9,7 +9,6 @@ This project provisions an Ubuntu 24.04 VM on Proxmox with two network interface
 - **External interface** — internet-facing. SSH and the web server listen exclusively on this interface.
 - **Internal interface** (VLAN 150) — isolated internal network. Exposes port 9000 TCP to the device at `10.200.16.100/29`, No management traffic traverses this interface.
 
-Terraform handles VM provisioning. Ansible handles all in-OS configuration and hardening.
 
 ## Architecture
 
@@ -20,10 +19,11 @@ Internet / Operator access
           │
    [ Ubuntu VM — ]
           │
-       [ens19, 10.200.16.101/29 - VLAN 150] ← port 9000/TCP only
+       [eth1, 10.200.16.101/29 - VLAN 150] ← port 9000/TCP only
           │
    10.200.16.100 (internal device on VLAN 150)
 ```
+Terraform bootstraps the VM via cloud-init (user, SSH access, guest agent, networking), after which Ansible applies configuration and hardening.
 
 Port 9000 on the internal interface is reserved for internal service traffic
 
@@ -38,11 +38,11 @@ Port 9000 on the internal interface is reserved for internal service traffic
 │   ├── provider.tf       # Proxmox provider configuration
 └── ansible/
     ├── playbook.yml      # Main playbook
-    ├── inventory.ini     # Host inventory (update IP after terraform apply)
+    ├── inventory.ini     # Auto-generated inventory from Terraform
     ├── group_vars/
     │   └── terraform_vm.yml  # Interface names and internal IP config
     └── roles/
-        ├── base/         # System updates, qemu-guest-agent, internal interface config
+        ├── base/         # System updates and base packages
         ├── ssh/          # SSH hardening, bind to external interface only
         ├── webserver/    # Nginx install, bind to external interface only
         └── hardening/    # UFW rules, sysctl, fail2ban, reboot if required
@@ -132,10 +132,8 @@ sudo ufw status verbose
 
 | Variable | Description | Default |
 |---|---|---|
-| `external_interface` | Auto-detected from default route | `ansible_default_ipv4.interface` |
-| `internal_interface` | Auto-detected as remaining interface | derived |
-| `internal_ip` | Static IP for the internal interface | `10.200.16.101` |
-| `internal_prefix` | Subnet prefix for internal interface | `29` |
+| `external_interface` | External network interface used for SSH/HTTP | `eth0` |
+| `internal_interface` | Internal network interface used for service access (port 9000) | eth1 |
 
 ## Hardening Applied
 
@@ -161,20 +159,15 @@ The task description references vswitches, which I assume is referring to either
 
 **Interface IP assignment handled via Terraform and cloud-init** — In Version 2 of this assignment, the internal interface static IP is configured during VM provisioning.
 
-**Static IP on internal interface** — the internal interface is assigned `10.200.16.101/29` via netplan to establish L3 connectivity with `10.200.16.100/29`. Configurable via `group_vars`.
+**Static IP on internal interface** — assigned via Terraform/cloud-init during VM provisioning to establish L3 connectivity with `10.200.16.100/29`.
 
 **Port 9000** — exposed exclusively on the internal interface. In your production environment I assume this port is used by the Ethereum beacon node or some internal log collection port (prometheus/grafana).
 
-## Key Improvements - V2
+## Key Improvements (v2)
 
-Fixed Terraform → Ansible handoff
-
-qemu-guest-agent installed via cloud-init (not Ansible)
-
-Automated inventory generation
-
-No manual IP lookup required
-
-Internal interface configured in Terraform
-
-Removed netplan dependency from Ansible
+- Fixed Terraform → Ansible handoff
+- `qemu-guest-agent` installed via cloud-init (not Ansible)
+- Automated inventory generation (no manual IP lookup)
+- Internal interface configured in Terraform
+- Removed netplan dependency from Ansible
+- Explicit interface definitions (`eth0`, `eth1`)
