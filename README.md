@@ -25,7 +25,6 @@ Internet / Operator access
    10.200.16.100 (internal monitoring device)
 ```
 
-Port 9000 on the internal interface is reserved for internal service traffic — for example a Prometheus scraper or remote signer. No management traffic is permitted on the internal interface.
 
 ## Repository Structure
 
