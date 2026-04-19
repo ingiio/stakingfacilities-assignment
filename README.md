@@ -86,20 +86,10 @@ terraform init
 terraform apply
 ```
 
-Terraform will download the Ubuntu 24.04 cloud image, provision the VM with two NICs, and inject your SSH key via cloud-init. It will then wait for the qemu-guest-agent to respond.
+Terraform will download the Ubuntu 24.04 cloud image, provision the VM with two NICs, and inject your SSH key via cloud-init. It will then generate an ansible/inventory.ini file with the VM External IP and SSH Key.
 
-> **Important:** Terraform will hang after VM creation while waiting for the qemu-guest-agent. This is expected — proceed immediately to step 4 in a second terminal. Once Ansible installs the agent, Terraform will unblock and print the VM IP.
 
-### 4. Update the Ansible inventory
-
-While Terraform is waiting, find the VM's IP from your DHCP server or Proxmox UI and update `ansible/inventory.ini`:
-
-```ini
-[terraform_vm]
-terraform-vm ansible_host=<vm-ip> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ed25519
-```
-
-### 5. Run the Ansible playbook
+### 4. Run the Ansible playbook
 
 From your Ansible control node:
 
@@ -108,7 +98,7 @@ cd ansible
 ansible-playbook -i inventory.ini playbook.yml
 ```
 
-### 6. Verify
+### 5. Verify
 
 ```bash
 terraform output vm_ip
@@ -163,22 +153,23 @@ sudo ufw status verbose
 
 The task description references vswitches, which I assume is referring to either Proxmox or VMware. Since I have Proxmox available locally I used the `bpg/proxmox` Terraform provider. If your environment runs VMware vSphere or another hypervisor, the provider block and VM resource in `terraform/main.tf` would need to be adapted.
 
-The VM's external IP is assigned via DHCP, which keeps the Terraform code portable but requires updating the Ansible inventory after each fresh provisioning.
-
 ## Design Decisions
 
 **DHCP on the external interface** — portable across environments without requiring knowledge of the target IP range.
 
 **Bridge names as Terraform variables** — `external_bridge` and `internal_bridge` are configurable to accommodate different environments.
 
-**Interface auto-detection in Ansible** — the playbook detects the external interface via the default route and derives the internal interface from what remains, avoiding hardcoded interface names.
+**Interface IP assignment handled via Terraform and cloud-init** — In Version 2 of this assignment, the internal interface static IP is configured during VM provisioning.
 
 **Static IP on internal interface** — the internal interface is assigned `10.200.16.101/29` via netplan to establish L3 connectivity with `10.200.16.100/29`. Configurable via `group_vars`.
 
 **Port 9000** — exposed exclusively on the internal interface. In your production environment I assume this port is used by the Ethereum beacon node or some internal log collection port (prometheus/grafana).
 
-## Future Improvements
+## Key Improvements - V2
 
-Preinstall qemu-guest-agent into the template/image.
-
-Dynamic Ansible inventory that automatically gets IP information from Terraform output
+Fixed Terraform → Ansible handoff
+qemu-guest-agent installed via cloud-init (not Ansible)
+Automated inventory generation
+No manual IP lookup required
+Internal interface configured in Terraform
+Removed netplan dependency from Ansible
