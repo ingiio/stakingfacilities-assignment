@@ -1,0 +1,51 @@
+---
+- name: Get external interface IP
+  set_fact:
+    external_ip: "{{ ansible_facts['eth0']['ipv4']['address'] }}"
+
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Deploy Nginx site config from template
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/staking
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/staking
+    dest: /etc/nginx/sites-enabled/staking
+    state: link
+
+- name: Remove default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Validate Nginx config
+  command: nginx -t
+  changed_when: false
+
+- name: Enable and start Nginx
+  systemd:
+    name: nginx
+    enabled: true
+    state: restarted
+
+- name: Deploy placeholder index.html
+  copy:
+    dest: /var/www/html/index.html
+    content: |
+      <html>
+        <body>
+          <h1>HELLO THERE!</h1>
+        </body>
+      </html>
+    owner: www-data
+    group: www-data
+    mode: '0644'

@@ -1,0 +1,9 @@
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.*
+terraform/terraform.tfvars
+
+# Ansible
+ansible/*.retry
+ansible/inventory.ini

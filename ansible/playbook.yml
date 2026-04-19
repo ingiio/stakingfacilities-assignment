@@ -1,0 +1,10 @@
+---
+- name: Configure staking VM
+  hosts: terraform_vm
+  become: true
+
+  roles:
+    - base
+    - ssh
+    - webserver
+    - hardening

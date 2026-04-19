@@ -1,0 +1,27 @@
+---
+- name: Wait for cloud-init to finish
+  command: cloud-init status --wait
+  changed_when: false
+  failed_when: false
+
+- name: Wait for apt lock to be released
+  shell: while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done
+  changed_when: false
+
+- name: Update apt cache and upgrade packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Install base packages
+  apt:
+    name:
+      - curl
+      - ufw
+    state: present
+
+- name: Enable and start qemu-guest-agent
+  systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started

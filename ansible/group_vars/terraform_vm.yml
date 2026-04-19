@@ -1,0 +1,3 @@
+---
+external_interface: "eth0"
+internal_interface: "eth1"
