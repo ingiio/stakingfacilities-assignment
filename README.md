@@ -168,8 +168,13 @@ The task description references vswitches, which I assume is referring to either
 ## Key Improvements - V2
 
 Fixed Terraform → Ansible handoff
+
 qemu-guest-agent installed via cloud-init (not Ansible)
+
 Automated inventory generation
+
 No manual IP lookup required
+
 Internal interface configured in Terraform
+
 Removed netplan dependency from Ansible
