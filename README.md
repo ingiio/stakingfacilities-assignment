@@ -169,5 +169,4 @@ The task description references vswitches, which I assume is referring to either
 - `qemu-guest-agent` installed via cloud-init (not Ansible)
 - Automated inventory generation (no manual IP lookup)
 - Internal interface configured in Terraform
-- Removed netplan dependency from Ansible
 - Explicit interface definitions (`eth0`, `eth1`)
